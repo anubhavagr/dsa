@@ -1,12 +1,13 @@
 # 🗺️ ROADMAP — 93 Days · 13 Weeks · 3 Phases
 
-**Mission:** pass any DSA round at any MAANG company, at senior level. That means two things: (1) recognize the pattern behind any problem in < 5 minutes, (2) narrate your thinking the way senior interviewers expect. Every day file trains both.
+**Mission:** crack **Google L5 at 3.5 YOE** (and equivalents — Meta E5, etc.). That means exceeding, not clearing, the coding bar — and carrying the parallel [system design](interview/system-design-track.md) + [application timeline](interview/2026-timeline.md) tracks that L5 requires. The bar itself is defined in **[L5-BAR.md](L5-BAR.md)** — read it first.
 
 **Rules of the road**
 
-- **Mon–Fri** = learning days (2–3 problems, adaptive). **Sat** = review + timed mini-mock. **Sun** = rest.
-- Load is adaptive: pattern-drill topics (arrays, two pointers) carry 3 problems; cognitively heavy topics (DP, hard backtracking) carry 2 but expect longer on each.
-- ~185 scheduled problems (≈170 unique + redoes), drawn from Blind 75, NeetCode 150, and Meta/Google high-frequency tagged lists. Difficulty ramps: mostly Easy/Medium in Phase 1, Medium/Hard by Phase 3.
+- **Mon–Fri** = learning days (2–3 core problems + one 🎖️ L5 stretch, adaptive). **Sat** = review + timed mini-mock (+ 90-min system-design session — see the track). **Sun** = rest.
+- Load is adaptive: pattern-drill topics (arrays, two pointers) carry 3 problems; cognitively heavy topics (DP, hard backtracking) carry 2 but expect longer on each. The L5 stretch is optional on crushed days — it's scheduled, not sacred.
+- ~269 scheduled problem sessions (≈225 unique), drawn from Blind 75, NeetCode 150, Meta/Google high-frequency tagged lists, and a curated Google-caliber L5 layer. Difficulty ramps: mostly Easy/Medium in Phase 1, Medium/Hard by Phase 3.
+- Week 12's simulations and the Dec 24 grand mock include 🪜 follow-up ladders (streaming / memory / concurrency variants) — L5 interviews are decided on the follow-ups.
 
 ---
 

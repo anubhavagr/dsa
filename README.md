@@ -1,8 +1,22 @@
-# 🏆 DSA Mastery — 93 Days to Meta/Google Senior Level
+# 🏆 DSA Mastery — 93 Days to Google L5 / Meta E5 Level
 
-**Sep 26, 2026 → Dec 27, 2026** · Python · 224 scheduled problem sessions (~180 unique) · Blind 75 + NeetCode 150 + Meta/Google high-frequency lists
+**Sep 26, 2026 → Dec 27, 2026** · Python · 269 scheduled problem sessions (~225 unique) · Blind 75 + NeetCode 150 + Meta/Google high-frequency + 45 Google-caliber L5 stretch problems
 
-The master plan lives in **[ROADMAP.md](ROADMAP.md)**. This file is your dashboard — run `python3 tracker.py` any time and it refreshes everything below from the checkboxes in your day files.
+The master plan lives in **[ROADMAP.md](ROADMAP.md)**. The bar you're training for lives in **[L5-BAR.md](L5-BAR.md)** — read it before Day 1 and at every phase gate. This file is your dashboard — run `python3 tracker.py` any time and it refreshes everything below from the checkboxes in your day files.
+
+## 🎖️ The L5 layer (parallel tracks — none eats the daily loop)
+
+Targeting **Google L5 at 3.5 YOE** means exceeding, not clearing, the bar:
+
+| Track | File | Cadence |
+|---|---|---|
+| The bar + phase gates (read first) | [L5-BAR.md](L5-BAR.md) | kickoff + each phase retro |
+| System design — decides L4 vs L5 | [interview/system-design-track.md](interview/system-design-track.md) | 13 weekly 90-min sessions (Saturdays) |
+| Application timeline for a 2026 offer | [interview/2026-timeline.md](interview/2026-timeline.md) | ~2 h/week from November |
+| Googleyness & STAR stories | [interview/googleyness-star.md](interview/googleyness-star.md) | draft 2/week, Weeks 3–6 |
+| Post-program hardening set | [L5-SET.md](L5-SET.md) | 3–4/week after Dec 27 |
+
+In the day files: 🎖️ **L5 stretch** problems are Google-caliber twists after the core set (skip guilt-free on crushed days), and Week 12's simulations carry 🪜 **follow-up ladders** — at L5 the follow-ups ARE the interview.
 
 ## 🖥️ Web dashboard (easiest way to track)
 
@@ -16,7 +30,7 @@ A local web app for the whole loop: browse the 93-day calendar, open any day, ti
 
 1. Open today's file: `days/YYYY-MM-DD.md` (click it in the week table below).
 2. Do the **Concepts** section first (~45 min) — read the cheatsheet, watch the video.
-3. Attempt each problem **before** looking at the hint. Time yourself (target: Easy < 15 min, Medium < 30 min, Hard < 45 min).
+3. Attempt each problem **before** looking at the hint. Time yourself (L5 targets: Easy < 15 min, Medium ≤ 25 min, Hard ≤ 40 min).
 4. After solving (or after the time limit): check the box, note your time, and flag it `- [ ] 🔁` if you struggled or needed the editorial — it enters the redo queue.
 5. Write one sentence in **What I learned**. Non-negotiable — the sentence is the retention.
 6. **Saturdays:** no new material. Redo the week's 🔁 queue, then a 2-problem timed mini-mock.
@@ -30,6 +44,8 @@ Before coding: **clarify constraints → give an example → state your approach
 | Path | What it is |
 |---|---|
 | [ROADMAP.md](ROADMAP.md) | The full 3-month map: phases, weeks, topics, targets |
+| [L5-BAR.md](L5-BAR.md) + [L5-SET.md](L5-SET.md) | The Google L5 bar, phase gates, and post-program hardening set |
+| [interview/](interview/) | 2026 application timeline, system-design track, STAR stories |
 | [app.py](app.py) + [dashboard.html](dashboard.html) | Local web dashboard — `python3 app.py` → http://localhost:8765 |
 | [days/](days/) | One file per date — your daily checklists (93 files) |
 | [cheatsheets/](cheatsheets/) | 18 Python pattern cheat sheets — the theory you read each day |
@@ -40,8 +56,8 @@ Before coding: **clarify constraints → give an example → state your approach
 <!-- TRACKER:BEGIN -->
 ### 📊 Current progress
 
-- **Overall:** ░░░░░░░░░░░░░░░░░░░░ 0% — **0 / 224 problems solved** (224 to go)
-- **Concepts studied:** ░░░░░░░░░░░░░░░░░░░░ 0% — 0 / 301
+- **Overall:** ░░░░░░░░░░░░░░░░░░░░ 0% — **0 / 269 problems solved** (269 to go)
+- **Concepts studied:** ░░░░░░░░░░░░░░░░░░░░ 0% — 0 / 302
 - **Days fully completed:** 0 / 93 · Days with problems: 80
 - **🔁 Redo queue (flagged problems):** 0
 - **Starts in** 5 days — first file: [days/2026-09-26.md](days/2026-09-26.md)
@@ -50,9 +66,9 @@ Before coding: **clarify constraints → give an example → state your approach
 
 | Phase | Problems | Progress |
 |---|---|---|
-| Phase 1 · Foundations<br>2026-09-26 → 2026-10-25 | 0/71 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
-| Phase 2 · Core Data Structures<br>2026-10-26 → 2026-11-22 | 0/68 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
-| Phase 3 · Advanced & Interview Mode<br>2026-11-23 → 2026-12-27 | 0/85 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
+| Phase 1 · Foundations<br>2026-09-26 → 2026-10-25 | 0/81 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
+| Phase 2 · Core Data Structures<br>2026-10-26 → 2026-11-22 | 0/88 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
+| Phase 3 · Advanced & Interview Mode<br>2026-11-23 → 2026-12-27 | 0/100 | `░░░░░░░░░░░░░░░░░░░░ 0%` |
 
 ### 📅 Week-by-week
 
