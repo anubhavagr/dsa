@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA Dashboard · 93 Days</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111a2c; --panel2:#0e1626; --line:#1f2b42;
+    --text:#dbe4f3; --dim:#8496b5; --accent:#34d399; --accent2:#60a5fa;
+    --easy:#34d399; --med:#fbbf24; --hard:#fb7185; --sun:#c4b5fd;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--bg); color:var(--text); font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding:20px}
+  a{color:var(--accent2); text-decoration:none} a:hover{text-decoration:underline}
+  code{background:#0a101d; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:13px/1.5 "SF Mono",Menlo,Consolas,monospace}
+  pre{background:#0a101d; border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow:auto; margin:10px 0}
+  pre code{border:0; padding:0; background:none; font-size:13px; line-height:1.6; color:#c9d7f0}
+
+  header{display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; margin-bottom:18px}
+  h1{font-size:20px; letter-spacing:.2px}
+  h1 small{color:var(--dim); font-weight:400; margin-left:8px; font-size:13px}
+  .topstats{display:flex; gap:10px; flex-wrap:wrap}
+  .stat{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 14px; min-width:120px}
+  .stat b{font-size:17px} .stat span{display:block; color:var(--dim); font-size:11px; text-transform:uppercase; letter-spacing:.6px}
+  button{cursor:pointer; border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:8px; padding:7px 14px; font-size:13px}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#06281c; font-weight:600}
+  input[type=date]{background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px}
+
+  .layout{display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+  .side{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; position:sticky; top:20px; max-height:calc(100vh - 40px); overflow:auto}
+  .phase{margin-bottom:12px}
+  .phase .row{display:flex; justify-content:space-between; font-size:12px; color:var(--dim); margin-bottom:4px}
+  .bar{height:7px; background:#0a101d; border-radius:4px; overflow:hidden}
+  .bar i{display:block; height:100%; background:var(--accent); border-radius:4px; transition:width .4s}
+  .weeks{margin-top:14px; border-top:1px solid var(--line); padding-top:12px}
+  .weekrow{display:flex; align-items:center; gap:6px; margin-bottom:6px}
+  .weekrow .lbl{width:58px; font-size:11px; color:var(--dim); flex:none}
+  .chip{width:30px; height:30px; flex:none; display:grid; place-items:center; border-radius:8px; background:var(--panel2); border:1px solid var(--line); font-size:13px; cursor:pointer}
+  .chip:hover{border-color:var(--accent2)}
+  .chip.today{outline:2px solid var(--accent2)}
+  .chip.sel{background:#182740}
+
+  .day{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px 26px; min-height:400px}
+  .day h2{font-size:19px; margin-bottom:2px}
+  .day .meta{color:var(--dim); font-size:13px; margin-bottom:14px; display:flex; gap:14px; flex-wrap:wrap; align-items:center}
+  .nav{display:flex; gap:8px; margin:14px 0 20px}
+  .card{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px}
+  .card h3{font-size:14px; color:var(--accent); margin-bottom:8px; letter-spacing:.3px}
+  .card.pattern p{color:var(--dim); margin-bottom:4px}
+
+  ul.plain{list-style:none}
+  ul.plain li{padding:6px 0; border-bottom:1px dashed #16213a; display:flex; gap:10px; align-items:flex-start}
+  ul.plain li:last-child{border-bottom:0}
+
+  .cb{width:19px; height:19px; flex:none; margin-top:2px; accent-color:var(--accent); cursor:pointer}
+  .strike{text-decoration:line-through; color:var(--dim)}
+  .item{flex:1}
+
+  .prob{display:flex; gap:12px; align-items:flex-start}
+  .prob .body{flex:1}
+  .prob .t{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+  .prob .t .num{color:var(--dim); font-size:13px}
+  .prob .t a{font-weight:600; font-size:15px}
+  .chipd{font-size:11px; padding:2px 9px; border-radius:20px; font-weight:600}
+  .d-Easy{background:#0c2e22; color:var(--easy)} .d-Medium{background:#33270a; color:var(--med)} .d-Hard{background:#3a1620; color:var(--hard)}
+  .d-undefined,.d-—{background:#1c2436; color:var(--dim)}
+  .subs{margin-top:6px; font-size:13px; color:var(--dim)}
+  .subs div{margin:3px 0}
+  .hintbtn{font-size:12px; padding:3px 10px; margin:4px 0}
+  .hint{display:none; margin-top:4px; padding:8px 12px; background:#0a101d; border-left:3px solid var(--med); border-radius:6px; color:var(--text)}
+  .hint.open{display:block}
+  .flag{font-size:12px; color:var(--dim); display:inline-flex; align-items:center; gap:6px; margin-top:4px}
+
+  .logform{display:flex; gap:8px; margin-top:10px}
+  .logform input{flex:1; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:14px}
+  table{border-collapse:collapse; width:100%; margin:8px 0; font-size:13px}
+  th,td{border:1px solid var(--line); padding:6px 10px; text-align:left}
+  th{color:var(--dim); background:#0d1526; font-size:12px}
+  .quote{border-left:3px solid var(--accent2); padding:8px 14px; color:var(--dim); background:var(--panel2); border-radius:0 8px 8px 0; margin-top:16px; font-size:13px}
+  .typechip{font-size:11px; padding:2px 10px; border-radius:20px; background:#1c2436; color:var(--sun); border:1px solid var(--line)}
+  .empty{color:var(--dim); padding:40px 0; text-align:center}
+  .toast{position:fixed; bottom:18px; right:18px; background:var(--accent); color:#06281c; font-weight:600; padding:10px 18px; border-radius:10px; opacity:0; transition:opacity .3s; pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 DSA Mastery <small id="subtitle">Sep 26 → Dec 27, 2026</small></h1>
+  <div class="topstats">
+    <div class="stat"><b id="s-probs">–</b><span>problems</span></div>
+    <div class="stat"><b id="s-days">–</b><span>days done</span></div>
+    <div class="stat"><b id="s-concepts">–</b><span>concepts</span></div>
+    <div class="stat"><b id="s-redo">–</b><span>🔁 redo queue</span></div>
+    <div>
+      <button class="primary" onclick="loadDay(SUM.today, true)">Today</button>
+      <input type="date" id="picker" min="2026-09-26" max="2026-12-27" onchange="loadDay(this.value)">
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <div id="phases"></div>
+    <div class="weeks" id="weeks"></div>
+  </aside>
+  <main class="day" id="day"><div class="empty">Pick a day from the calendar →</div></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let SUM = null, CUR = null;
+const $ = id => document.getElementById(id);
+const EMOJI = {done:"✅", part:"🟡", todo:"⬜", moon:"🌙"};
+
+async function api(path, body){
+  const r = await fetch(path, body
+    ? {method:"POST", headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}
+    : undefined);
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error || r.status);
+  return j;
+}
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), 1500); }
+
+async function loadSummary(){
+  SUM = await api("/api/summary");
+  const p = SUM.problems, pct = p.total ? Math.round(100*p.done/p.total) : 0;
+  $("s-probs").textContent = `${p.done}/${p.total} (${pct}%)`;
+  $("s-days").textContent = `${SUM.days.done}/${SUM.days.total}`;
+  $("s-concepts").textContent = `${SUM.concepts.done}/${SUM.concepts.total}`;
+  $("s-redo").textContent = SUM.redo_queue;
+  const until = Math.round((new Date("2026-09-26") - new Date(SUM.today)) / 864e5);
+  $("subtitle").textContent = SUM.started
+    ? `Sep 26 → Dec 27 · ${SUM.ends_in} days remain`
+    : `Sep 26 → Dec 27 · starts in ${until} days`;
+  $("phases").innerHTML = SUM.phases.map(ph=>{
+    const q = ph.total ? Math.round(100*ph.done/ph.total) : 0;
+    return `<div class="phase"><div class="row"><span>${ph.name}</span><span>${ph.done}/${ph.total}</span></div>
+      <div class="bar"><i style="width:${q}%"></i></div></div>`;
+  }).join("");
+  $("weeks").innerHTML = SUM.weeks.map(w=>{
+    const chips = w.dates.map(d=>
+      `<div class="chip ${d.today?"today":""} ${CUR&&CUR===d.date?"sel":""}" title="${d.date}"
+        onclick="loadDay('${d.date}')">${EMOJI[d.status]||"·"}</div>`).join("");
+    return `<div class="weekrow"><span class="lbl">${w.label}</span>${chips}</div>`;
+  }).join("");
+}
+
+async function loadDay(date, scroll){
+  try{ CUR = await api("/api/day?date="+date); }
+  catch(e){ $("day").innerHTML = `<div class="empty">No file for ${date}</div>`; return; }
+  $("picker").value = date;
+  const d = CUR;
+  const parts = [];
+  const nav = `<div class="nav">
+      ${d.prev ? `<button onclick="loadDay('${d.prev}')">← ${d.prev}</button>` : ""}
+      <button class="primary" onclick="loadDay(SUM.today)">Today</button>
+      ${d.next ? `<button onclick="loadDay('${d.next}')">${d.next} →</button>` : `<button disabled>🏁 program complete</button>`}
+    </div>`;
+  parts.push(`<h2>${esc(d.title)}</h2>
+    <div class="meta"><span class="typechip">${d.type}</span><span>${esc(d.meta)}</span></div>${nav}`);
+
+  for(const s of d.sections){
+    const id = "sec"+s.line;
+    let inner = "";
+    // problems
+    const probs = s.items.filter(i=>i.kind==="problem");
+    const concepts = s.items.filter(i=>i.kind==="check");
+    if(concepts.length){
+      inner += `<ul class="plain">` + concepts.map(c=>
+        `<li><input type="checkbox" class="cb" ${c.checked?"checked":""} onchange="tgl(${c.line}, this.checked)">
+         <div class="item ${c.checked?"strike":""}">${c.html}</div></li>`).join("") + `</ul>`;
+    }
+    if(probs.length){
+      inner += probs.map(p=>{
+        const hintSub = p.subs.find(x=>x.text.startsWith("Hint:"));
+        const flag = p.subs.find(x=>x.kind==="subcheck");
+        const metaSubs = p.subs.filter(x=>!x.text.startsWith("Hint:")).map(x=>
+          x.kind==="subcheck"
+            ? `<label class="flag"><input type="checkbox" class="cb" style="width:15px;height:15px;margin:0" ${x.checked?"checked":""} onchange="tgl(${x.line}, this.checked)"> 🔁 struggled — add to redo queue</label>`
+            : `<div>${esc(x.text)}</div>`).join("");
+        return `<div class="card prob">
+          <input type="checkbox" class="cb" ${p.checked?"checked":""} onchange="tgl(${p.line}, this.checked)">
+          <div class="body">
+            <div class="t"><span class="num">#${p.n}</span>
+              <a href="${p.url}" target="_blank" rel="noopener">${esc(p.title)}</a>
+              <span class="chipd d-${esc(p.diff)}">${esc(p.diff)}</span>
+              ${p.rest ? `<span style="color:var(--dim);font-size:12px">${esc(p.rest)}</span>` : ""}</div>
+            <div class="subs">${metaSubs}
+              ${hintSub ? `<button class="hintbtn" onclick="this.nextElementSibling.classList.toggle('open')">reveal hint</button>
+                <div class="hint">${esc(hintSub.text.slice(6))}</div>` : ""}</div>
+          </div></div>`;
+      }).join("");
+    }
+    // generic items (text, code, tables, quotes, stray checkboxes)
+    const rows = [];
+    let tbl = [];
+    const flush = ()=>{ if(tbl.length){ rows.push(tbl); tbl=[]; } };
+    for(const it of s.items){
+      if(it.kind==="row"){ tbl.push(it.cells); } else flush();
+      if(it.kind==="text") rows.push({h:it.html});
+      if(it.kind==="code") rows.push({code:it.code});
+      if(it.kind==="quote") rows.push({q:it.html});
+      if(it.kind==="check" && !concepts.length) rows.push({chk:it});
+    }
+    flush();
+    for(const r of rows){
+      if(r.h !== undefined) inner += `<p style="color:var(--dim); margin:6px 0">${r.h}</p>`;
+      if(r.q !== undefined) inner += `<div class="quote">${r.q}</div>`;
+      if(r.chk !== undefined) inner += `<ul class="plain"><li><input type="checkbox" class="cb" ${r.chk.checked?"checked":""} onchange="tgl(${r.chk.line}, this.checked)"><div class="item ${r.chk.checked?"strike":""}">${r.chk.html}</div></li></ul>`;
+      if(r.code !== undefined) inner += `<pre><code>${esc(r.code)}</code></pre>`;
+      if(Array.isArray(r)) inner += `<table><tr>${r[0].map(c=>`<th>${c}</th>`).join("")}</tr>` +
+        r.slice(1).map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("") + `</table>`;
+    }
+    // log form under "What I learned"
+    if(s.title.includes("🧠")){
+      inner += `<div class="logform"><input id="logtext" placeholder="What did you learn? Enter to log…" onkeydown="if(event.key==='Enter')log()">
+        <button class="primary" onclick="log()">Log</button></div>`;
+    }
+    const cls = s.title.startsWith("🔥") ? "pattern" : "";
+    parts.push(`<div class="card ${cls}"><h3>${esc(s.title)}</h3>${inner}</div>`);
+  }
+  $("day").innerHTML = parts.join("");
+  if(scroll) window.scrollTo({top:0, behavior:"smooth"});
+  await loadSummary(); // refresh chips/selection
+}
+
+async function tgl(line, checked){
+  try{ await api("/api/toggle", {date:CUR.date, line, checked}); }
+  catch(e){ toast("⚠ "+e.message); return; }
+  // refresh the open day + sidebar
+  const d = CUR.date; await loadDay(d);
+}
+async function log(){
+  const inp = $("logtext"), text = inp.value.trim();
+  if(!text) return;
+  try{ await api("/api/log", {date:CUR.date, text}); inp.value=""; toast("logged ✓"); }
+  catch(e){ toast("⚠ "+e.message); return; }
+  await loadDay(CUR.date);
+}
+function esc(s){ return String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+loadSummary().then(()=>loadDay(SUM.today_exists ? SUM.today : "2026-09-26"));
+</script>
+</body>
+</html>

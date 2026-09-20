@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+"""
+DSA Plan — Local Web Dashboard
+==============================
+Run:
+    python3 app.py            →  http://localhost:8765
+
+Stdlib only. Serves dashboard.html and a JSON API that reads/writes the
+checkboxes and practice log inside days/*.md. All mutations are line-based
+and validated, so editing the markdown by hand and via the UI can interleave
+safely (just refresh the view after hand edits).
+
+API:
+    GET  /api/summary                 → overall + phase + week stats
+    GET  /api/day?date=YYYY-MM-DD     → structured day content
+    POST /api/toggle  {date,line,checked}  → flip one checkbox line (0-based)
+    POST /api/log     {date,text}          → timestamped entry under "🧠 What I learned"
+"""
+import datetime as dt
+import html
+import json
+import re
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+
+ROOT = Path(__file__).resolve().parent
+DAYS = ROOT / "days"
+PORT = 8765
+
+START, FINAL = dt.date(2026, 9, 26), dt.date(2026, 12, 27)
+PHASES = [
+    ("Phase 1 · Foundations", "2026-09-26", "2026-10-25"),
+    ("Phase 2 · Core Data Structures", "2026-10-26", "2026-11-22"),
+    ("Phase 3 · Advanced & Interview Mode", "2026-11-23", "2026-12-27"),
+]
+WEEKS = [("Kickoff", ["2026-09-26", "2026-09-27"])]
+for i in range(13):
+    mon = dt.date(2026, 9, 28) + dt.timedelta(days=7 * i)
+    WEEKS.append((f"Week {i + 1}", [(mon + dt.timedelta(days=d)).isoformat() for d in range(7)]))
+
+PROBLEM_RE = re.compile(r"^- \[([ xX])\] (\d+)\. \[(.+?)\]\((https?://\S+?)\) \((.+?)\)(.*)$", re.M)  # render-parse (needs url)
+COUNT_RE = re.compile(r"^\s*- \[([ xX])\] \d+\.", re.M)  # stat-count (same rule as tracker.py)
+CONCEPT_RE = re.compile(r"^- \[([ xX])\] (Read|Watch|Do):", re.M)
+ANYBOX_RE = re.compile(r"^\s*- \[([ xX])\]", re.M)
+REDO_RE = re.compile(r"^\s*- \[([ xX])\][^\n]*🔁", re.M)
+WRITE_LOCK = threading.Lock()
+
+
+# ---------------------------------------------------------------- parsing
+def md_inline(s: str) -> str:
+    """Minimal markdown → HTML for one line (escape first, then links/bold/code)."""
+    s = html.escape(s, quote=False)
+
+    def link(m):
+        return f'<a href="{m.group(2)}" target="_blank" rel="noopener">{m.group(1)}</a>'
+
+    s = re.sub(r"\[(.+?)\]\((https?://\S+?)\)", link, s)
+    s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+    s = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", s)
+    return s
+
+
+def day_status(text: str) -> str:
+    boxes = ANYBOX_RE.findall(text)
+    if not boxes:
+        return "moon"
+    done = sum(1 for b in boxes if b.lower() == "x")
+    return "done" if done == len(boxes) else ("part" if done else "todo")
+
+
+def scan_day(path: Path) -> dict:
+    text = path.read_text(encoding="utf-8")
+    probs = COUNT_RE.findall(text)
+    cons = CONCEPT_RE.findall(text)
+    redos = [b for b in REDO_RE.findall(text) if b.lower() == "x"]
+    return {
+        "date": path.stem,
+        "problems": len(probs),
+        "problems_done": sum(1 for b, *_ in probs if b.lower() == "x"),
+        "concepts": len(cons),
+        "concepts_done": sum(1 for b, _ in cons if b.lower() == "x"),
+        "redo_flags": len(redos),
+        "status": day_status(text),
+    }
+
+
+def summary() -> dict:
+    days = sorted(DAYS.glob("*.md"))
+    info = [scan_day(p) for p in days]
+    by_date = {d["date"]: d for d in info}
+    total_p = sum(d["problems"] for d in info)
+    done_p = sum(d["problems_done"] for d in info)
+    phases = []
+    for name, lo, hi in PHASES:
+        pd = [d for d in info if lo <= d["date"] <= hi]
+        t, dn = sum(d["problems"] for d in pd), sum(d["problems_done"] for d in pd)
+        phases.append({"name": name, "start": lo, "end": hi, "total": t, "done": dn})
+    weeks = []
+    for label, dates in WEEKS:
+        weeks.append({"label": label, "dates": [
+            {"date": d, "status": by_date[d]["status"], "today": d == dt.date.today().isoformat()}
+            for d in dates if d in by_date
+        ]})
+    today_d = dt.date.today()
+    today = today_d.isoformat()
+    return {
+        "today": today,
+        "today_exists": today in by_date,
+        "started": today_d >= START,
+        "ends_in": (FINAL - today_d).days if today_d <= FINAL else 0,
+        "problems": {"done": done_p, "total": total_p},
+        "concepts": {"done": sum(d["concepts_done"] for d in info), "total": sum(d["concepts"] for d in info)},
+        "days": {"done": sum(1 for d in info if d["status"] == "done"), "total": len(info)},
+        "redo_queue": sum(d["redo_flags"] for d in info),
+        "phases": phases,
+        "weeks": weeks,
+    }
+
+
+def parse_day(path: Path) -> dict:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    title = lines[0].lstrip("# ").strip() if lines else path.stem
+    meta = [l.strip() for l in lines[1:3]]
+    prev_m = re.search(r"\[← Prev\]\((\S+?)\)", " ".join(meta))
+    next_m = re.search(r"\[Next →\]\((\S+?)\)", " ".join(meta))
+
+    text_all = "\n".join(lines)
+    dtype = ("rest" if "## 🌙" in text_all else
+             "sim" if "## ⏱️ Round" in text_all or "Interview Sim" in title else
+             "review" if "## 🧹" in text_all or "Mini-mock" in text_all else "learning")
+
+    sections, cur = [], None
+    in_code, code_buf = False, []
+    for i, ln in enumerate(lines):
+        stripped = ln.strip()
+        if in_code:
+            if stripped.startswith("```"):
+                cur["items"].append({"kind": "code", "lang": "python", "code": "\n".join(code_buf)})
+                code_buf, in_code = [], False
+            else:
+                code_buf.append(ln)
+            continue
+        if stripped.startswith("```"):
+            in_code = True
+            continue
+        if ln.startswith("## "):
+            cur = {"title": stripped[3:].strip(), "line": i, "items": []}
+            sections.append(cur)
+            continue
+        if cur is None:
+            continue
+        pm = PROBLEM_RE.match(ln)
+        if pm:
+            cur["items"].append({
+                "kind": "problem", "line": i, "checked": pm.group(1).lower() == "x",
+                "n": pm.group(2), "title": pm.group(3), "url": pm.group(4), "diff": pm.group(5),
+                "rest": pm.group(6).strip(), "subs": [],
+            })
+            continue
+        if re.match(r"^\s+- ", ln) and cur["items"] and cur["items"][-1]["kind"] == "problem":
+            sub = {"kind": "sub", "text": ln.strip()[2:]}
+            bm = ANYBOX_RE.match(ln)
+            if bm:
+                sub.update({"kind": "subcheck", "line": i, "checked": bm.group(1).lower() == "x",
+                            "text": ln.strip()[6:].strip()})
+            cur["items"][-1]["subs"].append(sub)
+            continue
+        if ANYBOX_RE.match(ln):
+            cur["items"].append({"kind": "check", "line": i,
+                                 "checked": ANYBOX_RE.match(ln).group(1).lower() == "x",
+                                 "html": md_inline(ln.strip()[6:])})
+            continue
+        if stripped.startswith("|"):
+            if set(stripped) <= {"|", "-", ":", " "}:
+                continue  # table separator row
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            cur["items"].append({"kind": "row", "cells": [md_inline(c) for c in cells]})
+            continue
+        if stripped.startswith(">"):
+            cur["items"].append({"kind": "quote", "html": md_inline(stripped.lstrip("> "))})
+            continue
+        if stripped:
+            cur["items"].append({"kind": "text", "html": md_inline(stripped)})
+
+    return {"date": path.stem, "title": title, "meta": meta[0] if meta else "",
+            "prev": prev_m.group(1).replace(".md", "") if prev_m else None,
+            "next": next_m.group(1).replace(".md", "") if next_m else None,
+            "type": dtype, "sections": sections}
+
+
+# ---------------------------------------------------------------- mutations
+def toggle_box(date: str, line_no: int, checked: bool) -> dict:
+    p = DAYS / f"{date}.md"
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
+        raise ValueError("no such day")
+    with WRITE_LOCK:
+        raw = p.read_text(encoding="utf-8")
+        ends_nl = raw.endswith("\n")
+        lines = raw.splitlines()
+        if not 0 <= line_no < len(lines):
+            raise ValueError("line out of range")
+        ln = lines[line_no]
+        m = ANYBOX_RE.match(ln)
+        if not m:
+            raise ValueError("not a checkbox line")
+        cur_checked = m.group(1).lower() == "x"
+        if cur_checked != checked:
+            ln = re.sub(r"- \[ \]", "- [x]", ln, count=1) if checked else re.sub(r"- \[[xX]\]", "- [ ]", ln, count=1)
+            lines[line_no] = ln
+            p.write_text("\n".join(lines) + ("\n" if ends_nl else ""), encoding="utf-8")
+    return {"ok": True}
+
+
+def add_log(date: str, text: str) -> dict:
+    p = DAYS / f"{date}.md"
+    text = text.strip().replace("\n", " ")[:500]
+    if not text:
+        raise ValueError("empty log")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
+        raise ValueError("no such day")
+    stamp = dt.datetime.now().strftime("%H:%M")
+    entry = f"- {stamp} · {text}"
+    with WRITE_LOCK:
+        raw = p.read_text(encoding="utf-8")
+        ends_nl = raw.endswith("\n")
+        lines = raw.splitlines()
+        head = next((i for i, l in enumerate(lines) if l.startswith("## 🧠")), None)
+        if head is None:
+            lines.append("")
+            lines.append("## 🧠 What I learned")
+            head = len(lines) - 1
+        end = len(lines)
+        for i in range(head + 1, len(lines)):
+            if lines[i].startswith("## ") or lines[i].startswith("> 🗣️"):
+                end = i
+                break
+        lines.insert(end, entry)
+        p.write_text("\n".join(lines) + ("\n" if ends_nl else ""), encoding="utf-8")
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------- server
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *a):  # quiet
+        pass
+
+    def _send(self, code: int, body, ctype="application/json"):
+        data = body if isinstance(body, bytes) else json.dumps(body).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self):
+        u = urlparse(self.path)
+        if u.path in ("/", "/index.html"):
+            page = (ROOT / "dashboard.html").read_bytes()
+            self._send(200, page, "text/html; charset=utf-8")
+        elif u.path == "/api/summary":
+            self._send(200, summary())
+        elif u.path == "/api/day":
+            q = parse_qs(u.query)
+            date = (q.get("date") or [""])[0]
+            p = DAYS / f"{date}.md"
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
+                self._send(404, {"error": "no such day"})
+            else:
+                self._send(200, parse_day(p))
+        else:
+            self._send(404, {"error": "not found"})
+
+    def do_POST(self):
+        u = urlparse(self.path)
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(n) or b"{}")
+            if u.path == "/api/toggle":
+                r = toggle_box(body["date"], int(body["line"]), bool(body["checked"]))
+            elif u.path == "/api/log":
+                r = add_log(body["date"], body["text"])
+            else:
+                return self._send(404, {"error": "not found"})
+            self._send(200, r)
+        except Exception as e:
+            self._send(400, {"error": str(e)})
+
+
+if __name__ == "__main__":
+    print(f"DSA dashboard → http://localhost:{PORT}  (Ctrl-C to stop)")
+    ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
