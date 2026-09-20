@@ -82,6 +82,17 @@
   th{color:var(--dim); background:#0d1526; font-size:12px}
   .quote{border-left:3px solid var(--accent2); padding:8px 14px; color:var(--dim); background:var(--panel2); border-radius:0 8px 8px 0; margin-top:16px; font-size:13px}
   .typechip{font-size:11px; padding:2px 10px; border-radius:20px; background:#1c2436; color:var(--sun); border:1px solid var(--line)}
+  .tabs{display:flex; gap:8px}
+  .tab{font-size:14px; padding:8px 16px; border-radius:10px; color:var(--dim)}
+  .tab.active{background:var(--accent); border-color:var(--accent); color:#06281c; font-weight:700}
+  .tab .badge{margin-left:6px; font-size:11px; background:#0a101d; border-radius:12px; padding:1px 8px; color:var(--med)}
+  .tab.active .badge{background:#06281c; color:var(--accent)}
+  .sdrow{display:flex; gap:8px; align-items:center; padding:7px 8px; border-radius:8px; cursor:pointer; border:1px solid transparent}
+  .sdrow:hover{background:var(--panel2)}
+  .sdrow.sel{background:#182740; border-color:var(--line)}
+  .sdrow .sd-name{flex:1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .sdrow .sd-date{font-size:11px; color:var(--dim)}
+  .sdrow .sd-boxes{font-size:11px; color:var(--dim); min-width:34px; text-align:right}
   .empty{color:var(--dim); padding:40px 0; text-align:center}
   .toast{position:fixed; bottom:18px; right:18px; background:var(--accent); color:#06281c; font-weight:600; padding:10px 18px; border-radius:10px; opacity:0; transition:opacity .3s; pointer-events:none}
   .toast.show{opacity:1}
@@ -106,13 +117,17 @@
 <body>
 <header>
   <h1>🏆 DSA Mastery <small id="subtitle">Sep 26 → Dec 27, 2026</small></h1>
+  <div class="tabs">
+    <button id="tab-dsa" class="tab active" onclick="setKind('dsa')">📚 DSA Plan</button>
+    <button id="tab-sd" class="tab" onclick="setKind('design')">🏗️ System Design<span class="badge" id="sd-count">0/13</span></button>
+  </div>
   <div class="topstats">
     <div class="stat"><b id="s-probs">–</b><span>problems</span></div>
     <div class="stat"><b id="s-days">–</b><span>days done</span></div>
     <div class="stat"><b id="s-concepts">–</b><span>concepts</span></div>
     <div class="stat"><b id="s-redo">–</b><span>🔁 redo queue</span></div>
     <div>
-      <button class="primary" onclick="loadDay(SUM.today, true)">Today</button>
+      <button class="primary" onclick="goToday()">Today</button>
       <input type="date" id="picker" min="2026-09-26" max="2026-12-27" onchange="loadDay(this.value)">
     </div>
   </div>
@@ -134,7 +149,7 @@
 </div>
 
 <script>
-let SUM = null, CUR = null;
+let SUM = null, CUR = null, KIND = "dsa", CURK = "dsa";
 const $ = id => document.getElementById(id);
 const EMOJI = {done:"✅", part:"🟡", todo:"⬜", moon:"🌙"};
 
@@ -165,6 +180,27 @@ async function loadSummary(){
     return `<div class="phase"><div class="row"><span>${ph.name}</span><span>${ph.done}/${ph.total}</span></div>
       <div class="bar"><i style="width:${q}%"></i></div></div>`;
   }).join("");
+  const sd = SUM.design || {done:0, total:0};
+  $("sd-count").textContent = `${sd.done}/${sd.total}`;
+  renderSidebar();
+}
+
+function renderSidebar(){
+  if (KIND === "design") {
+    const d = SUM.design;
+    const q = d.total ? Math.round(100*d.done/d.total) : 0;
+    $("phases").innerHTML = `<div class="phase"><div class="row"><span>🏗️ System Design</span><span>${d.done}/${d.total}</span></div>
+      <div class="bar"><i style="width:${q}%"></i></div></div>
+      <div class="phase"><div class="row"><span>Sessions run Saturdays</span><span>90 min</span></div></div>`;
+    $("weeks").innerHTML = d.sessions.map(s => `
+      <div class="sdrow ${CUR===s.date?"sel":""}" onclick="loadDay('${s.date}')">
+        <span>${EMOJI[s.status]||"⬜"}</span>
+        <span class="sd-name">${esc(s.short)}</span>
+        <span class="sd-date">${s.date.slice(5)}</span>
+        <span class="sd-boxes">${s.boxes.done}/${s.boxes.total}</span>
+      </div>`).join("");
+    return;
+  }
   $("weeks").innerHTML = SUM.weeks.map(w=>{
     const chips = w.dates.map(d=>
       `<div class="chip ${d.today?"today":""} ${CUR&&CUR===d.date?"sel":""}" title="${d.date}"
@@ -173,9 +209,29 @@ async function loadSummary(){
   }).join("");
 }
 
+function setKind(k){
+  if(k === KIND) return;
+  KIND = k;
+  $("tab-dsa").classList.toggle("active", k === "dsa");
+  $("tab-sd").classList.toggle("active", k === "design");
+  renderSidebar();
+  goToday(true);
+}
+
+function goToday(scroll){
+  if (KIND === "design" && SUM.design && SUM.design.sessions.length) {
+    const s = SUM.design.sessions;
+    const t = s.find(x => x.date === SUM.today) || s.filter(x => x.date < SUM.today).pop() || s[0];
+    loadDay(t.date, scroll);
+  } else {
+    loadDay(SUM.today_exists ? SUM.today : "2026-09-26", scroll);
+  }
+}
+
 async function loadDay(date, scroll){
-  try{ CUR = await api("/api/day?date="+date); }
-  catch(e){ $("day").innerHTML = `<div class="empty">No file for ${date}</div>`; return; }
+  CURK = KIND;
+  try{ CUR = await api("/api/day?date=" + date + "&kind=" + KIND); }
+  catch(e){ $("day").innerHTML = `<div class="empty">No ${KIND === "design" ? "session" : "file"} for ${date}</div>`; return; }
   $("picker").value = date;
   const d = CUR;
   const parts = [];
@@ -253,7 +309,7 @@ async function loadDay(date, scroll){
 }
 
 async function tgl(line, checked){
-  try{ await api("/api/toggle", {date:CUR.date, line, checked}); }
+  try{ await api("/api/toggle", {date:CUR.date, line, checked, kind:CURK}); }
   catch(e){ toast("⚠ "+e.message); return; }
   // refresh the open day + sidebar
   const d = CUR.date; await loadDay(d);
@@ -261,7 +317,7 @@ async function tgl(line, checked){
 async function log(){
   const inp = $("logtext"), text = inp.value.trim();
   if(!text) return;
-  try{ await api("/api/log", {date:CUR.date, text}); inp.value=""; toast("logged ✓"); }
+  try{ await api("/api/log", {date:CUR.date, text, kind:CURK}); inp.value=""; toast("logged ✓"); }
   catch(e){ toast("⚠ "+e.message); return; }
   await loadDay(CUR.date);
 }
@@ -277,6 +333,8 @@ function mdInline(s){
   });
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  s = s.replace(/(^|[^\w_])_([^_\n]+?)_(?![\w_])/g, "$1<i>$2</i>");
+  s = s.replace(/<!--.*?-->/g, "");   // hide HTML comments (tracker markers etc.)
   return s;
 }
 function renderMd(md){
@@ -288,6 +346,7 @@ function renderMd(md){
   const endTable = ()=>{ if(table){ html += mdTable(rows.splice(0)); table = false; } };
   for(const raw of md.split("\n")){
     const t = raw.trim();
+    if(/^<!--.*-->$/.test(t) || t === "<!--" || t === "-->") continue;   // comment line — never render
     if(t.startsWith("|") && t.endsWith("|")){
       if(/^[\s|:-]+$/.test(t)) continue;           // separator row
       endList(); table = true; rows.push(t); continue;

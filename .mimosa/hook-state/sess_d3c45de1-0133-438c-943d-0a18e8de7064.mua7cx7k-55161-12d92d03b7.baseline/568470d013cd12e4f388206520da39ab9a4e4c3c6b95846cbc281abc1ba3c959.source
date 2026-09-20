@@ -281,7 +281,7 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/doc":
             q = parse_qs(u.query)
             rel = (q.get("p") or [""])[0]
-            if not re.fullmatch(r"(README|ROADMAP)\.md|(days|cheatsheets|templates)/[\w.\-]+\.md", rel):
+            if not re.fullmatch(r"(README|ROADMAP|L5-BAR|L5-SET)\.md|(days|cheatsheets|templates|interview)/[\w.\-]+\.md", rel):
                 self._send(404, {"error": "bad path"})
                 return
             f = ROOT / rel

@@ -1,6 +1,8 @@
-# 🏗️ System Design Track — 13 weekly sessions (REQUIRED for L5)
+# 🏗️ System Design Track — 13 dated sessions (REQUIRED for L5)
 
-**Why this exists:** at Google, the system design round is usually what decides L4 vs L5. Coding rounds get you to "no-hire is off the table"; design rounds get the senior level. You cannot wing this track — 90 minutes once a week, same slot every week (recommended: Saturday after the review, or Sunday morning if you opt out of full rest). By Dec 27 you'll have designed 13 Google-scale systems and read the core of *Designing Data-Intensive Applications* (DDIA).
+**Why this exists:** at Google, the system design round is usually what decides L4 vs L5. Coding rounds get you to "no-hire is off the table"; design rounds get the senior level. You cannot wing this track — 90 minutes once a week, every Saturday, tracked separately from the DSA calendar.
+
+**Where the sessions live:** each Saturday has its own dated checklist file in [design/](../design/) (SD-01 … SD-13, Oct 3 → Dec 26), with its own tracking — open the 🏗️ **System Design tab** in the dashboard (`python3 app.py`) or watch the design section of README.md (via `python3 tracker.py`). Every session's debrief lands in [design-notes.md](design-notes.md) — your running error catalog.
 
 **Format per session (90 min):** 15 min requirements → 25 min one-page design (boxes + arrows + numbers) → 20 min "interviewer mode": answer the escalation questions aloud → 20 min compare with a reference discussion → 10 min: write 3 things you missed in `interview/design-notes.md`.
 
@@ -8,23 +10,23 @@
 
 **Back-of-envelope numbers to memorize by Week 6** (Jeff Dean's classic set — say them in under 15 seconds): L1 cache ref ~0.5 ns · main-memory ref ~100 ns · SSD random read ~150 µs · disk seek ~10 ms · same-datacenter RTT ~0.5 ms · cross-continent RTT ~150 ms · 1 Gbps link ≈ 125 MB/s. Know them cold — an L5 candidate writes these without pausing.
 
-## The 13 sessions
+## The 13 sessions (each links to its dated checklist file)
 
-| Wk | Date (Sat) | Design prompt | DDIA / reading | L5 escalation you must survive |
+| Wk | Date (Sat) | Design prompt | Session file | DDIA |
 |---|---|---|---|---|
-| 1 | Oct 3 | **Design a URL shortener** (warm-up — but do it at L5 depth: custom aliases, analytics, expiry) | Primer: URL shortener | 10⁴ new links/s, 100 reads/s per link hot |
-| 2 | Oct 10 | **Design a distributed rate limiter** (token bucket vs sliding window; per-user, per-API) | DDIA ch. 1 | Sticky vs non-sticky users; thundering herd on config change |
-| 3 | Oct 17 | **Design Google Search autocomplete** (trie + top-K per node, tiered caching) | DDIA ch. 2 (data models) | 100k QPS typing latency <100 ms; fresh trends within minutes |
-| 4 | Oct 24 | **Design a web crawler** (politeness, frontier, dedup, recrawl scheduling) | Primer: crawler | Crawl the top-1B pages on 100 machines; JS-rendered pages |
-| 5 | Oct 31 | **Design Google Docs** (operational transformation vs CRDTs, presence) | DDIA ch. 5 (replication) | Offline edit + reconnect; 50 collaborators |
-| 6 | Nov 7 | **Design YouTube / video pipeline** (upload → transcode → CDN, adaptive bitrate) | DDIA ch. 6 (partitioning) | 500 h uploaded/minute; viral video cold-start |
-| 7 | Nov 14 | **Design Google Drive / file sync** (chunking, consistency, conflict files) | DDIA ch. 5–6 | 1 TB accounts; sync 100k-file folders; mobile bandwidth |
-| 8 | Nov 21 | **Design Gmail** (mail storage, indexing/search, push, spam pipeline) | DDIA ch. 3 (storage engines) | Billions of messages/day; search across 10 GB mailbox <500 ms |
-| 9 | Nov 28 | **Design Google Maps route planning** (hierarchical graphs, contraction hierarchies, traffic) | DDIA ch. 8 (unreliable clocks — traffic freshness) | World-graph routing <200 ms; live rerouting |
-| 10 | Dec 5 | **Design a distributed Pub/Sub** (delivery guarantees, ordering, replay) | DDIA ch. 7, 11 (transactions, streams) | Exactly-once illusion; 1M subscribers of one topic |
-| 11 | Dec 12 | **Design a rate-limited, sharded key-value cache** (Bigtable-lite: memtable/SSTables, consistent hashing) | DDIA ch. 3 (LSM trees) | 99.9th percentile <10 ms at 1M QPS; node failure rebalancing |
-| 12 | Dec 19 | **Design Google Photos** (upload, dedup by content hash, ML tagging, album sharing) | DDIA ch. 9 (consistency + consensus) | Petabytes/year; multi-region durability 11 nines |
-| 13 | Dec 26 | **FULL MOCK — interviewer asks, you drive 45 min, no notes** (pick: design the entire earlier system by dice) | Your `design-notes.md` | Have a friend or record yourself; grade against the L5 rubric below |
+| 1 | Oct 3 | URL shortener at L5 depth | [design/2026-10-03.md](../design/2026-10-03.md) | primer |
+| 2 | Oct 10 | Distributed rate limiter | [design/2026-10-10.md](../design/2026-10-10.md) | ch. 1 |
+| 3 | Oct 17 | Google Search autocomplete | [design/2026-10-17.md](../design/2026-10-17.md) | ch. 2 |
+| 4 | Oct 24 | Web crawler | [design/2026-10-24.md](../design/2026-10-24.md) | primer |
+| 5 | Oct 31 | Google Docs (OT/CRDT) | [design/2026-10-31.md](../design/2026-10-31.md) | ch. 5 |
+| 6 | Nov 7 | YouTube video pipeline | [design/2026-11-07.md](../design/2026-11-07.md) | ch. 6 |
+| 7 | Nov 14 | Google Drive sync | [design/2026-11-14.md](../design/2026-11-14.md) | ch. 5–6 |
+| 8 | Nov 21 | Gmail | [design/2026-11-21.md](../design/2026-11-21.md) | ch. 3 |
+| 9 | Nov 28 | Maps route planning | [design/2026-11-28.md](../design/2026-11-28.md) | ch. 8 |
+| 10 | Dec 5 | Distributed Pub/Sub | [design/2026-12-05.md](../design/2026-12-05.md) | ch. 7, 11 |
+| 11 | Dec 12 | Sharded KV cache (Bigtable-lite) | [design/2026-12-12.md](../design/2026-12-12.md) | ch. 3 |
+| 12 | Dec 19 | Google Photos | [design/2026-12-19.md](../design/2026-12-19.md) | ch. 9 |
+| 13 | Dec 26 | **FULL MOCK — 45 min, recorded** | [design/2026-12-26.md](../design/2026-12-26.md) | your notes |
 
 ## The L5 design rubric (grade every session)
 

@@ -11,7 +11,7 @@ Targeting **Google L5 at 3.5 YOE** means exceeding, not clearing, the bar:
 | Track | File | Cadence |
 |---|---|---|
 | The bar + phase gates (read first) | [L5-BAR.md](L5-BAR.md) | kickoff + each phase retro |
-| System design — decides L4 vs L5 | [interview/system-design-track.md](interview/system-design-track.md) | 13 weekly 90-min sessions (Saturdays) |
+| System design — decides L4 vs L5 | [design/](design/) — 13 dated Saturday session files + the 🏗️ tab in the web dashboard | weekly, tracked separately |
 | Application timeline for a 2026 offer | [interview/2026-timeline.md](interview/2026-timeline.md) | ~2 h/week from November |
 | Googleyness & STAR stories | [interview/googleyness-star.md](interview/googleyness-star.md) | draft 2/week, Weeks 3–6 |
 | Post-program hardening set | [L5-SET.md](L5-SET.md) | 3–4/week after Dec 27 |
@@ -48,6 +48,7 @@ Before coding: **clarify constraints → give an example → state your approach
 | [interview/](interview/) | 2026 application timeline, system-design track, STAR stories |
 | [app.py](app.py) + [dashboard.html](dashboard.html) | Local web dashboard — `python3 app.py` → http://localhost:8765 |
 | [days/](days/) | One file per date — your daily checklists (93 files) |
+| [design/](design/) | 13 dated system-design sessions (Saturdays) — separate tracking, dashboard 🏗️ tab |
 | [cheatsheets/](cheatsheets/) | 18 Python pattern cheat sheets — the theory you read each day |
 | [solutions/](solutions/) | **Your** code. One folder per topic. Commit after every solve |
 | [templates/](templates/) | Blank day template for impromptu practice after the program ends |
@@ -89,8 +90,33 @@ Before coding: **clarify constraints → give an example → state your approach
 | Week 12 | [⬜](days/2026-12-14.md) | [⬜](days/2026-12-15.md) | [⬜](days/2026-12-16.md) | [⬜](days/2026-12-17.md) | [⬜](days/2026-12-18.md) | [⬜](days/2026-12-19.md) | [⬜](days/2026-12-20.md) |
 | Week 13 | [⬜](days/2026-12-21.md) | [⬜](days/2026-12-22.md) | [⬜](days/2026-12-23.md) | [⬜](days/2026-12-24.md) | [⬜](days/2026-12-25.md) | [⬜](days/2026-12-26.md) | [⬜](days/2026-12-27.md) |
 
-_Legend:_ ✅ done · 🟡 in progress · ⬜ untouched · 🌙 rest · **bold** = current week. _Re-run `python3 tracker.py` after checking boxes._
+**Legend:** ✅ done · 🟡 in progress · ⬜ untouched · 🌙 rest · **bold** = current week. Re-run `python3 tracker.py` after checking boxes.
 <!-- TRACKER:END -->
+
+<!-- DESIGN:BEGIN -->
+### 🏗️ System design track — 0/13 sessions complete
+
+- **Session checkboxes:** ░░░░░░░░░░░░░░░░░░░░ 0% — 0/299
+- **Readings (DDIA etc.):** 0/24
+
+| # | Session | Date | Boxes | Status |
+|---|---|---|---|---|
+| 1 | [SD-01 — Sat Oct 03 — Design a URL Shortener (L5 depth)](design/2026-10-03.md) | 2026-10-03 | 0/25 | ⬜ |
+| 2 | [SD-02 — Sat Oct 10 — Design a Distributed Rate Limiter](design/2026-10-10.md) | 2026-10-10 | 0/23 | ⬜ |
+| 3 | [SD-03 — Sat Oct 17 — Design Google Search Autocomplete](design/2026-10-17.md) | 2026-10-17 | 0/23 | ⬜ |
+| 4 | [SD-04 — Sat Oct 24 — Design a Web Crawler](design/2026-10-24.md) | 2026-10-24 | 0/24 | ⬜ |
+| 5 | [SD-05 — Sat Oct 31 — Design Google Docs (collaborative editing)](design/2026-10-31.md) | 2026-10-31 | 0/24 | ⬜ |
+| 6 | [SD-06 — Sat Nov 07 — Design YouTube (video pipeline)](design/2026-11-07.md) | 2026-11-07 | 0/24 | ⬜ |
+| 7 | [SD-07 — Sat Nov 14 — Design Google Drive (file sync)](design/2026-11-14.md) | 2026-11-14 | 0/25 | ⬜ |
+| 8 | [SD-08 — Sat Nov 21 — Design Gmail](design/2026-11-21.md) | 2026-11-21 | 0/24 | ⬜ |
+| 9 | [SD-09 — Sat Nov 28 — Design Google Maps Route Planning](design/2026-11-28.md) | 2026-11-28 | 0/25 | ⬜ |
+| 10 | [SD-10 — Sat Dec 05 — Design a Distributed Pub/Sub (Kafka-class)](design/2026-12-05.md) | 2026-12-05 | 0/22 | ⬜ |
+| 11 | [SD-11 — Sat Dec 12 — Design a Sharded KV Cache (Bigtable-lite)](design/2026-12-12.md) | 2026-12-12 | 0/25 | ⬜ |
+| 12 | [SD-12 — Sat Dec 19 — Design Google Photos](design/2026-12-19.md) | 2026-12-19 | 0/25 | ⬜ |
+| 13 | [SD-13 — Sat Dec 26 — Full System Design Mock (45 min, cold)](design/2026-12-26.md) | 2026-12-26 | 0/10 | ⬜ |
+
+**Legend:** ✅ done · 🟡 in progress · ⬜ untouched. Sessions run Saturdays; the dashboard (`python3 app.py`) has a dedicated System Design tab.
+<!-- DESIGN:END -->
 
 ## 🚨 If you fall behind
 

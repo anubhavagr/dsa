@@ -4,7 +4,7 @@
 
 **Rules of the road**
 
-- **Mon–Fri** = learning days (2–3 core problems + one 🎖️ L5 stretch, adaptive). **Sat** = review + timed mini-mock (+ 90-min system-design session — see the track). **Sun** = rest.
+- **Mon–Fri** = learning days (2–3 core problems + one 🎖️ L5 stretch, adaptive). **Sat** = review + timed mini-mock, plus the 90-min system-design session ([design/](design/) — 13 dated files, tracked separately, 🏗️ tab in the dashboard). **Sun** = rest.
 - Load is adaptive: pattern-drill topics (arrays, two pointers) carry 3 problems; cognitively heavy topics (DP, hard backtracking) carry 2 but expect longer on each. The L5 stretch is optional on crushed days — it's scheduled, not sacred.
 - ~269 scheduled problem sessions (≈225 unique), drawn from Blind 75, NeetCode 150, Meta/Google high-frequency tagged lists, and a curated Google-caliber L5 layer. Difficulty ramps: mostly Easy/Medium in Phase 1, Medium/Hard by Phase 3.
 - Week 12's simulations and the Dec 24 grand mock include 🪜 follow-up ladders (streaming / memory / concurrency variants) — L5 interviews are decided on the follow-ups.

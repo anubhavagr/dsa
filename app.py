@@ -27,6 +27,7 @@ from urllib.parse import urlparse, parse_qs
 
 ROOT = Path(__file__).resolve().parent
 DAYS = ROOT / "days"
+DESIGN = ROOT / "design"
 PORT = 8765
 
 START, FINAL = dt.date(2026, 9, 26), dt.date(2026, 12, 27)
@@ -79,6 +80,26 @@ def day_status(text: str) -> str:
     return "done" if done == len(boxes) else ("part" if done else "todo")
 
 
+def design_summary() -> dict:
+    """System-design sessions — tracked separately from the DSA calendar."""
+    sessions = []
+    for p in sorted(DESIGN.glob("*.md")):
+        text = p.read_text(encoding="utf-8")
+        boxes = ANYBOX_RE.findall(text)
+        reads = CONCEPT_RE.findall(text)
+        first = text.splitlines()[0].lstrip("# ").strip() if text.splitlines() else p.stem
+        short = first.split("·")[-1].strip() if "·" in first else first
+        sessions.append({
+            "date": p.stem, "title": first, "short": short,
+            "status": day_status(text) if boxes else "todo",
+            "boxes": {"done": sum(1 for b in boxes if b.lower() == "x"), "total": len(boxes)},
+            "readings": {"done": sum(1 for b, _ in reads if b.lower() == "x"), "total": len(reads)},
+        })
+    return {"sessions": sessions,
+            "done": sum(1 for s in sessions if s["status"] == "done"),
+            "total": len(sessions)}
+
+
 def scan_day(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     probs = COUNT_RE.findall(text)
@@ -125,6 +146,7 @@ def summary() -> dict:
         "redo_queue": sum(d["redo_flags"] for d in info),
         "phases": phases,
         "weeks": weeks,
+        "design": design_summary(),
     }
 
 
@@ -200,10 +222,18 @@ def parse_day(path: Path) -> dict:
 
 
 # ---------------------------------------------------------------- mutations
-def toggle_box(date: str, line_no: int, checked: bool) -> dict:
-    p = DAYS / f"{date}.md"
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
+def _target(date: str, kind: str) -> Path:
+    base = DESIGN if kind == "design" else DAYS
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        raise ValueError("bad date")
+    p = base / f"{date}.md"
+    if not p.exists():
         raise ValueError("no such day")
+    return p
+
+
+def toggle_box(date: str, line_no: int, checked: bool, kind: str = "dsa") -> dict:
+    p = _target(date, kind)
     with WRITE_LOCK:
         raw = p.read_text(encoding="utf-8")
         ends_nl = raw.endswith("\n")
@@ -222,13 +252,11 @@ def toggle_box(date: str, line_no: int, checked: bool) -> dict:
     return {"ok": True}
 
 
-def add_log(date: str, text: str) -> dict:
-    p = DAYS / f"{date}.md"
+def add_log(date: str, text: str, kind: str = "dsa") -> dict:
+    p = _target(date, kind)
     text = text.strip().replace("\n", " ")[:500]
     if not text:
         raise ValueError("empty log")
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
-        raise ValueError("no such day")
     stamp = dt.datetime.now().strftime("%H:%M")
     entry = f"- {stamp} · {text}"
     with WRITE_LOCK:
@@ -273,15 +301,13 @@ class Handler(BaseHTTPRequestHandler):
         elif u.path == "/api/day":
             q = parse_qs(u.query)
             date = (q.get("date") or [""])[0]
-            p = DAYS / f"{date}.md"
-            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) or not p.exists():
-                self._send(404, {"error": "no such day"})
-            else:
-                self._send(200, parse_day(p))
+            kind = (q.get("kind") or ["dsa"])[0]
+            p = _target(date, kind)
+            self._send(200, parse_day(p))
         elif u.path == "/api/doc":
             q = parse_qs(u.query)
             rel = (q.get("p") or [""])[0]
-            if not re.fullmatch(r"(README|ROADMAP|L5-BAR|L5-SET)\.md|(days|cheatsheets|templates|interview)/[\w.\-]+\.md", rel):
+            if not re.fullmatch(r"(README|ROADMAP|L5-BAR|L5-SET)\.md|(days|cheatsheets|templates|interview|design)/[\w.\-]+\.md", rel):
                 self._send(404, {"error": "bad path"})
                 return
             f = ROOT / rel
@@ -299,9 +325,9 @@ class Handler(BaseHTTPRequestHandler):
             n = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(n) or b"{}")
             if u.path == "/api/toggle":
-                r = toggle_box(body["date"], int(body["line"]), bool(body["checked"]))
+                r = toggle_box(body["date"], int(body["line"]), bool(body["checked"]), body.get("kind", "dsa"))
             elif u.path == "/api/log":
-                r = add_log(body["date"], body["text"])
+                r = add_log(body["date"], body["text"], body.get("kind", "dsa"))
             else:
                 return self._send(404, {"error": "not found"})
             self._send(200, r)
