@@ -172,7 +172,7 @@ class LRUCache:
         if len(self.map) > self.cap:              # evict LRU (before tail)
             lru = self.tail.prev
             self._unlink(lru)
-            del self.map[lru.key]                 # node carries its key FOR THIS
+            del self.map[lru.key]                 # node carries its key so eviction can delete it from the dict
 ```
 O(1) per op. The OrderedDict shortcut (`move_to_end` + `popitem(last=False)`) is 5 lines — mention it, then hand-roll, because interviewers expect the list. LFU-cache adds a freq → DLL-of-nodes layer plus a min-freq pointer.
 

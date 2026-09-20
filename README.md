@@ -52,6 +52,7 @@ Before coding: **clarify constraints → give an example → state your approach
 | [cheatsheets/](cheatsheets/) | 18 Python pattern cheat sheets — the theory you read each day |
 | [solutions/](solutions/) | **Your** code. One folder per topic. Commit after every solve |
 | [templates/](templates/) | Blank day template for impromptu practice after the program ends |
+| [STYLE.md](STYLE.md) | Writing contract for all content — plain, explanatory, technically precise; no aphorisms |
 | [tracker.py](tracker.py) | Dashboard updater — `python3 tracker.py` after checking boxes |
 
 <!-- TRACKER:BEGIN -->

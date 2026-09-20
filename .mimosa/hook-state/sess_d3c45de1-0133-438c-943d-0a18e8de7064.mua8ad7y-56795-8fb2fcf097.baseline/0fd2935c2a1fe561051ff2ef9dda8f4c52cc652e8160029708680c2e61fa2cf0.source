@@ -22,8 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DAYS_DIR = ROOT / "days"
+DESIGN_DIR = ROOT / "design"
 README = ROOT / "README.md"
 BEGIN, END = "<!-- TRACKER:BEGIN -->", "<!-- TRACKER:END -->"
+DBEGIN, DEND = "<!-- DESIGN:BEGIN -->", "<!-- DESIGN:END -->"
 
 PROBLEM_RE = re.compile(r"^\s*- \[([ xX])\] \d+\.", re.M)
 CONCEPT_RE = re.compile(r"^\s*- \[([ xX])\] (?:Read|Watch|Do):", re.M)
@@ -51,7 +53,7 @@ def scan_file(path: Path):
     problems = PROBLEM_RE.findall(text)
     concepts = CONCEPT_RE.findall(text)
     boxes = ANYBOX_RE.findall(text)
-    redos = [b for b in REDO_RE.findall(text) if b.lower() == "x"]  # only CHECKED struggle flags
+    redos = [b for b in REDO_RE.findall(text) if b.lower() == "x"]
     p_done = sum(1 for b in problems if b.lower() == "x")
     c_done = sum(1 for b in concepts if b.lower() == "x")
     total_boxes = len(boxes)
@@ -75,6 +77,45 @@ def scan_file(path: Path):
         "open_boxes": total_boxes - done_boxes,
         "redo_flags": open_redos,
     }
+
+
+def scan_design_file(path: Path):
+    """System-design session files: every checkbox is a milestone; Read:/Do: lines are readings."""
+    text = path.read_text(encoding="utf-8")
+    boxes = ANYBOX_RE.findall(text)
+    reads = CONCEPT_RE.findall(text)
+    done = sum(1 for b in boxes if b.lower() == "x")
+    r_done = sum(1 for b in reads if b.lower() == "x")
+    first = text.splitlines()[0].lstrip("# ").strip() if text.splitlines() else path.stem
+    status = ("⬜" if done == 0 else "🟡" if done < len(boxes) else "✅") if boxes else "⬜"
+    return {"date": path.stem, "title": first, "total": len(boxes), "done": done,
+            "reads": len(reads), "reads_done": r_done, "status": status}
+
+
+def design_block(sessions):
+    done_s = sum(1 for s in sessions if s["status"] == "✅")
+    tot_b = sum(s["total"] for s in sessions)
+    done_b = sum(s["done"] for s in sessions)
+    tot_r = sum(s["reads"] for s in sessions)
+    done_r = sum(s["reads_done"] for s in sessions)
+    lines = []
+    lines.append(f"### 🏗️ System design track — {done_s}/{len(sessions)} sessions complete")
+    lines.append("")
+    if not sessions:
+        lines.append("_No design session files found in design/ yet._")
+        return "\n".join(lines)
+    lines.append(f"- **Session checkboxes:** {bar(done_b, tot_b)} — {done_b}/{tot_b}")
+    lines.append(f"- **Readings (DDIA etc.):** {done_r}/{tot_r}")
+    lines.append("")
+    lines.append("| # | Session | Date | Boxes | Status |")
+    lines.append("|---|---|---|---|---|")
+    for i, s in enumerate(sessions, 1):
+        short = s["title"].split("·")[-1].strip() if "·" in s["title"] else s["title"]
+        num = s["title"].split("·")[0].strip() if "·" in s["title"] else f"SD-{i:02d}"
+        lines.append(f"| {i} | [{num} — {short}](design/{s['date']}.md) | {s['date']} | {s['done']}/{s['total']} | {s['status']} |")
+    lines.append("")
+    lines.append("**Legend:** ✅ done · 🟡 in progress · ⬜ untouched. Sessions run Saturdays; the dashboard (`python3 app.py`) has a dedicated System Design tab.")
+    return "\n".join(lines)
 
 
 def bar(done: int, total: int, width: int = 20) -> str:
@@ -150,18 +191,26 @@ def main(dry=False):
             cells = ["—", "—", "—", "—", "—"] + cells  # pad to Mon–Fri columns; Sat/Sun carry the links
         lines.append(f"| {prefix} | " + " | ".join(cells) + " |")
     lines.append("")
-    lines.append("_Legend:_ ✅ done · 🟡 in progress · ⬜ untouched · 🌙 rest · **bold** = current week. _Re-run `python3 tracker.py` after checking boxes._")
+    lines.append("**Legend:** ✅ done · 🟡 in progress · ⬜ untouched · 🌙 rest · **bold** = current week. Re-run `python3 tracker.py` after checking boxes.")
 
     block = "\n".join(lines)
+    design_sessions = [scan_design_file(p) for p in sorted(DESIGN_DIR.glob("*.md"))]
+    dblock = design_block(design_sessions)
     if not dry:
         text = README.read_text(encoding="utf-8")
         if BEGIN not in text or END not in text:
             sys.exit("README.md is missing TRACKER markers — aborting instead of corrupting it.")
         pre, rest = text.split(BEGIN, 1)
         _, post = rest.split(END, 1)
-        README.write_text(pre + BEGIN + "\n" + block + "\n" + END + post, encoding="utf-8")
+        if DBEGIN in post and DEND in post:
+            head, tail = post.split(DBEGIN, 1)
+            _, after = tail.split(DEND, 1)
+            post = head + DBEGIN + "\n" + dblock + "\n" + DEND + after
+        text = pre + BEGIN + "\n" + block + "\n" + END + post
+        README.write_text(text, encoding="utf-8")
 
-    print(f"{done_p}/{total_p} problems · {done_c}/{total_c} concepts · {done_days}/{len(days)} days complete · {redos} redos flagged"
+    dsum = f" · design {sum(1 for s in design_sessions if s['status'] == '✅')}/{len(design_sessions)} sessions" if design_sessions else ""
+    print(f"{done_p}/{total_p} problems · {done_c}/{total_c} concepts · {done_days}/{len(days)} days complete · {redos} redos flagged{dsum}"
           + ("" if dry else " → README.md updated"))
 
 
