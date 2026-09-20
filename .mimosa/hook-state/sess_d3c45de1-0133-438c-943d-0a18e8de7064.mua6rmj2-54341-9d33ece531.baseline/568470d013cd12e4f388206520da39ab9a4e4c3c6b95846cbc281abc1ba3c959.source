@@ -54,18 +54,9 @@ def md_inline(s: str) -> str:
     s = html.escape(s, quote=False)
 
     def link(m):
-        text, url = m.group(1), m.group(2)
-        if url.startswith(("http://", "https://")):
-            return f'<a href="{url}" target="_blank" rel="noopener">{text}</a>'
-        # internal repo link (../cheatsheets/01-x.md, ../README.md, …):
-        # keep the href relative — the frontend intercepts it and opens the doc viewer
-        label = text
-        pm = re.fullmatch(r"(?:\.\./)?([^/]+)\.md", text)
-        if pm:  # bare path labels like ../README.md → README
-            label = pm.group(1)
-        return f'<a href="{url}" class="int">{label}</a>'
+        return f'<a href="{m.group(2)}" target="_blank" rel="noopener">{m.group(1)}</a>'
 
-    s = re.sub(r"\[(.+?)\]\(([^()\s]+?)\)", link, s)
+    s = re.sub(r"\[(.+?)\]\((https?://\S+?)\)", link, s)
     s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
     s = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", s)
     return s
@@ -278,18 +269,6 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(404, {"error": "no such day"})
             else:
                 self._send(200, parse_day(p))
-        elif u.path == "/api/doc":
-            q = parse_qs(u.query)
-            rel = (q.get("p") or [""])[0]
-            if not re.fullmatch(r"(README|ROADMAP)\.md|(days|cheatsheets|templates)/[\w.\-]+\.md", rel):
-                self._send(404, {"error": "bad path"})
-                return
-            f = ROOT / rel
-            if not f.exists():
-                self._send(404, {"error": "no such doc"})
-                return
-            first = next((l.lstrip("# ").strip() for l in f.read_text(encoding="utf-8").splitlines() if l.startswith("#")), rel)
-            self._send(200, {"title": first, "path": rel, "markdown": f.read_text(encoding="utf-8")})
         else:
             self._send(404, {"error": "not found"})
 

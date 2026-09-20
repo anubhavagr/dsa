@@ -85,6 +85,22 @@
   .empty{color:var(--dim); padding:40px 0; text-align:center}
   .toast{position:fixed; bottom:18px; right:18px; background:var(--accent); color:#06281c; font-weight:600; padding:10px 18px; border-radius:10px; opacity:0; transition:opacity .3s; pointer-events:none}
   .toast.show{opacity:1}
+  a.int{color:var(--sun); border-bottom:1px dotted var(--sun)}
+
+  /* ---- in-app document viewer ---- */
+  .viewer{position:fixed; inset:0; background:rgba(4,8,16,.75); display:grid; place-items:center; z-index:50; padding:24px}
+  .viewer[hidden]{display:none}
+  .vcard{background:var(--panel); border:1px solid var(--line); border-radius:14px; width:min(880px, 94vw); max-height:88vh; display:flex; flex-direction:column}
+  .vhead{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--line)}
+  .vhead b{font-size:16px}
+  .vbody{padding:10px 24px 24px; overflow:auto}
+  .vbody h2{font-size:18px; margin:18px 0 8px} .vbody h3{font-size:15px; color:var(--accent); margin:16px 0 6px} .vbody h4{font-size:13px; color:var(--dim); margin:12px 0 4px; text-transform:none}
+  .vbody p{color:var(--text); margin:6px 0}
+  .vbody ul.md{margin:6px 0 6px 4px; list-style:none}
+  .vbody ul.md li{padding:3px 0 3px 4px; border-bottom:1px dashed #16213a; color:var(--dim)}
+  .vbody blockquote{border-left:3px solid var(--accent2); padding:6px 12px; color:var(--dim); margin:8px 0}
+  .vbody table{margin:10px 0}
+  .vbody th{color:var(--dim)}
 </style>
 </head>
 <body>
@@ -110,6 +126,12 @@
   <main class="day" id="day"><div class="empty">Pick a day from the calendar →</div></main>
 </div>
 <div class="toast" id="toast"></div>
+<div class="viewer" id="viewer" hidden>
+  <div class="vcard">
+    <div class="vhead"><b id="vtitle"></b><button onclick="closeDoc()">✕ Close</button></div>
+    <div class="vbody" id="vbody"></div>
+  </div>
+</div>
 
 <script>
 let SUM = null, CUR = null;
@@ -244,6 +266,73 @@ async function log(){
   await loadDay(CUR.date);
 }
 function esc(s){ return String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---- in-app markdown document viewer (cheatsheets, README, ROADMAP, day files) ---- */
+function mdInline(s){
+  s = esc(s);
+  s = s.replace(/\[([^\]]+)\]\(([^()\s]+)\)/g, (m, t, u)=>{
+    if(/^(https?:|mailto:)/.test(u)) return `<a href="${u}" target="_blank" rel="noopener">${t}</a>`;
+    if(u.startsWith("#")) return `<span>${t}</span>`;
+    return `<a href="${u}" class="int">${t}</a>`;
+  });
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  return s;
+}
+function renderMd(md){
+  const codes = [];
+  md = md.replace(/```(\w*)\n([\s\S]*?)(?:```|$)/g, (m,l,c)=>{ codes.push(c); return `\u0000C${codes.length-1}\u0000`; });
+  const rows = [];
+  let html = "", list = false, table = false;
+  const endList = ()=>{ if(list){ html += "</ul>"; list = false; } };
+  const endTable = ()=>{ if(table){ html += mdTable(rows.splice(0)); table = false; } };
+  for(const raw of md.split("\n")){
+    const t = raw.trim();
+    if(t.startsWith("|") && t.endsWith("|")){
+      if(/^[\s|:-]+$/.test(t)) continue;           // separator row
+      endList(); table = true; rows.push(t); continue;
+    }
+    endTable();
+    if(t.startsWith("### ")) { endList(); html += `<h4>${mdInline(t.slice(4))}</h4>`; }
+    else if(t.startsWith("## ")) { endList(); html += `<h3>${mdInline(t.slice(3))}</h3>`; }
+    else if(t.startsWith("# "))  { endList(); html += `<h2>${mdInline(t.slice(2))}</h2>`; }
+    else if(t.startsWith("> "))  { endList(); html += `<blockquote>${mdInline(t.slice(2))}</blockquote>`; }
+    else if(/^[-*] \[[ xX]\] /.test(t)) { if(!list){ html += '<ul class="md">'; list = true; } html += `<li>☐ ${mdInline(t.slice(6))}</li>`; }
+    else if(/^[-*] /.test(t)) { if(!list){ html += '<ul class="md">'; list = true; } html += `<li>${mdInline(t.slice(2))}</li>`; }
+    else if(/^\d+\. /.test(t)) { if(!list){ html += '<ul class="md">'; list = true; } html += `<li>${mdInline(t.replace(/^\d+\. /, ""))}</li>`; }
+    else if(t === "") endList();
+    else { endList(); html += `<p>${mdInline(t)}</p>`; }
+  }
+  endList(); endTable();
+  return html.replace(/\u0000C(\d+)\u0000/g, (m,i)=>`<pre><code>${esc(codes[+i])}</code></pre>`);
+}
+function mdTable(rows){
+  if(!rows.length) return "";
+  const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c=>c.trim());
+  return `<table><tr>${cells(rows[0]).map(c=>`<th>${mdInline(c)}</th>`).join("")}</tr>` +
+    rows.slice(1).map(r=>`<tr>${cells(r).map(c=>`<td>${mdInline(c)}</td>`).join("")}</tr>`).join("") + `</table>`;
+}
+async function openDoc(path){
+  try{
+    const d = await api("/api/doc?p=" + encodeURIComponent(path));
+    $("vtitle").textContent = d.title;
+    $("vbody").innerHTML = renderMd(d.markdown);
+    $("viewer").hidden = false;
+    $("vbody").scrollTop = 0;
+  }catch(e){ toast("⚠ cannot open: " + e.message); }
+}
+function closeDoc(){ $("viewer").hidden = true; }
+document.addEventListener("click", e=>{
+  const a = e.target.closest("a");
+  if(!a) return;
+  const href = a.getAttribute("href") || "";
+  if(/^(https?:|mailto:)/.test(href)) return;      // external → default behavior
+  e.preventDefault();
+  if(href === "#") return;
+  openDoc(href.replace(/^(\.\.\/)+/, "").replace(/^\/+/, ""));  // ../cheatsheets/x.md → cheatsheets/x.md
+});
+$("viewer").addEventListener("click", e=>{ if(e.target === $("viewer")) closeDoc(); });
+document.addEventListener("keydown", e=>{ if(e.key === "Escape") closeDoc(); });
 
 loadSummary().then(()=>loadDay(SUM.today_exists ? SUM.today : "2026-09-26"));
 </script>
